@@ -14,17 +14,6 @@ block body %}
     <div class="text-center text-white">
       <h1 class="display-4 fw-bolder">Shopy</h1>
       <p class="lead fw-normal text-white-50 mb-4">Shop with us..</p>
-      <div class="input-group mb-3 w-50 mx-auto">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Search for cafes..."
-          name="query"
-          hx-get="/search"
-          hx-trigger="keyup changed delay: 500ms"
-          hx-target="#results"
-        />
-      </div>
     </div>
   </div>
 </header>
@@ -60,9 +49,17 @@ block body %}
             class="card-footer p-4 pt-0 border-top-0 bg-transparent text-center"
           >
             <form action="/create-checkout-session" method="POST">
-              {% if current_user.is_authenticated: %} {{ render_form(form) }} {%
-              endif %}
+              {% if current_user.is_authenticated and not current_user.is_admin:
+              %} {{ render_form(form) }} {% endif %}
             </form>
+            {% if current_user.is_admin: %}
+            <a href="{{url_for('update',id=data.id)}}">
+              <button class="btn btn-outline-dark">Update</button>
+            </a>
+            <a href="{{url_for('delete',id=data.id)}}">
+              <button class="btn btn-outline-dark">Delete</button>
+            </a>
+            {% endif %}
           </div>
         </div>
       </div>

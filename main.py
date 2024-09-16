@@ -158,18 +158,17 @@ def logout():
     return redirect(url_for("login"))
 
 
-def admin_required(w):
-    @wraps(w)
-    def decorator(*args):
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:
             return abort(403)
-        return w(*args)
+        return f(*args, **kwargs)
 
-    return decorator
+    return decorated_function
 
 
 @app.route("/new", methods=["GET", "POST"])
-@login_required
 @admin_required
 def add_product():
     form = ProductsForm()
@@ -182,8 +181,39 @@ def add_product():
         db.session.add(new_item)
         db.session.commit()
         data = db.session.execute(db.select(Items)).scalars().all()
-        return render_template("checkout.html", data)
+        return render_template("checkout.html", data=data)
     return render_template("add_product.html", form=form)
+
+
+@app.route("/update/<int:id>", methods=["GET", "POST"])
+@admin_required
+def update(id):
+    item = Items.query.get_or_404(id)
+    form = ProductsForm(obj=item)
+    form.add.label.text = "Update"
+    if form.validate_on_submit():
+        name = form.name.data
+        img_url = form.img_url.data
+        price = form.price.data
+
+        item.name = name
+        item.img_url = img_url
+        item.price = price
+        db.session.commit()
+
+        flash("Item updated successfully", "success")
+        return redirect(url_for("home"))
+    return render_template("update.html", form=form)
+
+
+@app.route("/delete/<int:id>")
+@admin_required
+def delete(id):
+    item = Items.query.get_or_404(id)
+    db.session.delete(item)
+    db.session.commit()
+    flash(f"Successfully deleted item with id: {id}", "success")
+    return redirect(url_for("home"))
 
 
 @app.route("/success")
